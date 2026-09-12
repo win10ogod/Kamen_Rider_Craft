@@ -1,24 +1,92 @@
 name: Build
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    name: Minecraft 1.21.1 / Java 21
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          persist-credentials: false
 
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up Java 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: '21'
 
-      - name: Build with Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
-          arguments: build
+          cache-provider: basic
+          cache-read-only: ${{ github.event_name == 'pull_request' || github.ref_name != github.event.repository.default_branch }}
+
+      - name: Build with the repository's Gradle wrapper
+        run: bash ./gradlew --no-daemon --stacktrace --console=plain '-Dorg.gradle.jvmargs=-Xmx4G' build
+
+      - name: Verify mod metadata and prepare checksums
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          import tomllib
+          import zipfile
+
+          properties = dict(line.split('=', 1) for line in Path('gradle.properties').read_text().splitlines()
+                            if '=' in line and not line.lstrip().startswith('#'))
+          jars = sorted(Path('build/libs').glob('*.jar'))
+          assert jars, 'The build did not produce any JARs'
+          mods = [p for p in jars if not p.name.endswith(('-sources.jar', '-javadoc.jar'))]
+          assert mods, 'The build did not produce an installable mod JAR'
+          for jar in mods:
+              with zipfile.ZipFile(jar) as archive:
+                  assert archive.testzip() is None, f'Corrupt JAR: {jar}'
+                  metadata = tomllib.loads(archive.read('META-INF/neoforge.mods.toml').decode())
+                  mod = next(m for m in metadata['mods'] if m['modId'] == properties['mod_id'])
+                  assert mod['version'] == properties['mod_version'], 'Packaged mod version is stale'
+                  assert 'com/kelco/kamenridercraft/KamenRiderCraftCore.class' in archive.namelist()
+          Path('build/libs/SHA256SUMS.txt').write_text(''.join(
+              f'{hashlib.sha256(jar.read_bytes()).hexdigest()}  {jar.name}\n' for jar in jars))
+          info = f"Mod: {properties['mod_id']}\nVersion: {properties['mod_version']}\nMinecraft: {properties['minecraft_version']}\nCommit: {os.environ['GITHUB_SHA']}\n"
+          Path('build/libs/BUILD-INFO.txt').write_text(info)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Build artifacts\n\n```text\n' + info + '```\n')
+              summary.write('\nDownload the JAR and SHA256SUMS.txt from this run\'s Artifacts section.\n')
+          PY
+
+      - name: Upload mod JARs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kamenridercraft-mc1.21.1-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            build/libs/*.jar
+            build/libs/SHA256SUMS.txt
+            build/libs/BUILD-INFO.txt
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Upload build reports on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: build-reports-${{ github.run_number }}-${{ github.run_attempt }}
+          path: build/reports/
+          if-no-files-found: ignore
+          retention-days: 7
