@@ -4,6 +4,12 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      source-ref:
+        description: Exact source commit to build after syncing upstream
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -21,6 +27,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source-ref || github.sha }}
           persist-credentials: false
 
       - name: Set up Java 21
@@ -45,6 +52,7 @@ jobs:
           import hashlib
           import os
           from pathlib import Path
+          import subprocess
           import tomllib
           import zipfile
 
@@ -63,7 +71,8 @@ jobs:
                   assert 'com/kelco/kamenridercraft/KamenRiderCraftCore.class' in archive.namelist()
           Path('build/libs/SHA256SUMS.txt').write_text(''.join(
               f'{hashlib.sha256(jar.read_bytes()).hexdigest()}  {jar.name}\n' for jar in jars))
-          info = f"Mod: {properties['mod_id']}\nVersion: {properties['mod_version']}\nMinecraft: {properties['minecraft_version']}\nCommit: {os.environ['GITHUB_SHA']}\n"
+          commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          info = f"Mod: {properties['mod_id']}\nVersion: {properties['mod_version']}\nMinecraft: {properties['minecraft_version']}\nCommit: {commit}\n"
           Path('build/libs/BUILD-INFO.txt').write_text(info)
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
               summary.write('## Build artifacts\n\n```text\n' + info + '```\n')

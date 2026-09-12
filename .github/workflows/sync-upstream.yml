@@ -1,0 +1,74 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-upstream-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Merge upstream into main
+    if: github.repository == 'win10ogod/Kamen_Rider_Craft' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.merge.outputs.changed }}
+      head: ${{ steps.merge.outputs.head }}
+    steps:
+      - name: Sync fork while preserving local commits
+        id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=$(gh api "repos/$GH_REPO" --jq '.parent.full_name')
+          if [[ "$parent" != 'kelcok22/Kamen_Rider_Craft' ]]; then
+            echo '::error::Unexpected upstream repository; sync stopped.'
+            exit 1
+          fi
+
+          before=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
+          if ! gh api --method POST "repos/$GH_REPO/merge-upstream" \
+            -f branch=main > "$RUNNER_TEMP/upstream-sync.json"; then
+            cat "$RUNNER_TEMP/upstream-sync.json"
+            echo '::error::Upstream sync failed. Resolve any reported merge conflict in main, then rerun this workflow. No force reset is performed.'
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/upstream-sync.json"
+          after=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
+          changed=false
+          if [[ "$before" != "$after" ]]; then
+            changed=true
+          fi
+          printf 'changed=%s\nhead=%s\n' "$changed" "$after" >> "$GITHUB_OUTPUT"
+          {
+            printf '## Upstream sync\n\n'
+            printf 'Upstream: `kelcok22/Kamen_Rider_Craft:main`\n\n'
+            printf 'Before: `%s`\n\nAfter: `%s`\n\n' "$before" "$after"
+            if [[ "$changed" == true ]]; then
+              printf 'Merged upstream. The build below uses the resulting commit.\n'
+            else
+              printf 'Already up to date. Scheduled runs skip the build; manual runs rebuild main.\n'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build synced source
+    needs: sync
+    if: needs.sync.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build.yml
+    with:
+      source-ref: ${{ needs.sync.outputs.head }}

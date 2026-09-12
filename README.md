@@ -6,7 +6,11 @@
 
 推送、Pull Request 或 Actions 頁面的 **Run workflow** 都會執行完整 `build`。成功後，在該次執行的 **Artifacts** 下載 `kamenridercraft-mc1.21.1-*`，解壓即可取得 JAR、SHA-256 校驗碼與版本／提交資訊；產物保留 30 天。
 
-若要編譯作者的新提交，先同步上游到此 Fork，再執行工作流。建構產物代表該次提交的開發狀態，不等同作者正式發行版本；前置模組版本請以 `gradle.properties` 和 JAR 內的模組資訊為準。
+**[Sync upstream](https://github.com/win10ogod/Kamen_Rider_Craft/actions/workflows/sync-upstream.yml)** 每 6 小時檢查作者的 `main`，有更新就合併到此 Fork，接著自動建構該次合併後的提交。成功後直接在該次同步執行的 **Artifacts** 下載 JAR。排程沒有新提交時會略過建構；想立即同步並建構，可在 **Sync upstream → Run workflow** 手動執行。
+
+同步使用 GitHub 內建權杖，不需另設個人 Token。合併會保留此 Fork 的修改；發生衝突時工作流會失敗並顯示原因，需處理衝突後重跑。排程時間可能受 GitHub 排隊延遲；公開儲存庫連續 60 天沒有活動時，GitHub 會停用排程，屆時可到 Actions 重新啟用。
+
+建構產物代表該次提交的開發狀態，不等同作者正式發行版本；前置模組版本請以 `gradle.properties` 和 JAR 內的模組資訊為準。
 
 ---
 
