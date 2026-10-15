@@ -3,10 +3,11 @@ package com.kelco.kamenridercraft.item.base_items;
 
 import com.google.common.collect.Lists;
 import com.kelco.kamenridercraft.KamenRiderCraftCore;
-import com.kelco.kamenridercraft.client.renderer.layers.render_layer_util.RenderLayerInfo;
+import com.kelco.kamenridercraft.client.renderer.armor.render_layer.render_layer_info.RenderLayerInfo;
 import com.kelco.kamenridercraft.effects.EffectCore;
 import com.kelco.kamenridercraft.entity.mobs.summons.RiderSummonEntity;
 import com.kelco.kamenridercraft.item.ModdedItemCore;
+import com.kelco.kamenridercraft.world.attribute.KRCAttributes;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -70,6 +71,7 @@ public class RiderFormChangeItem extends BaseItem {
     private Boolean attackForm = false;
 
     private Boolean isGold = false;
+    private Boolean snowWalk = false;
 
     private Boolean setToArmorForm = false;
 
@@ -329,6 +331,11 @@ public class RiderFormChangeItem extends BaseItem {
         return this;
     }
 
+    public RiderFormChangeItem canSnowWalk() {
+        snowWalk = true;
+        return this;
+    }
+
     public RiderFormChangeItem setSlotOneAbility(String abilityChange, int abilityPriority) {
         slotOneAbility = abilityChange.toLowerCase();
         slotOneAbilityPriority = abilityPriority;
@@ -516,7 +523,11 @@ public class RiderFormChangeItem extends BaseItem {
     }
 
     public Boolean checkGold() {
-        return this.isGold;
+        return isGold;
+    }
+
+    public Boolean checkSnowWalk() {
+        return snowWalk;
     }
 
     public boolean inventoryOrHolderContains(Player player, Item item) {
@@ -546,6 +557,10 @@ public class RiderFormChangeItem extends BaseItem {
         if (this == ModdedItemCore.BLANK_FORM.get()) {
             return true;
         }
+        if (this.GetIsAttackForm()&& Objects.requireNonNull(player.getAttribute(KRCAttributes.IS_TRANSFORMING)).getValue()!=0)return false;
+        if (this.GetIsAttackForm()&& !belt.isTransformed(player))return false;
+
+
         if (hasIncompatibleForms) {
             for (RiderFormChangeItem incompatibleForm : incompatibleForms) {
                 int num_forms = belt.numBaseFormItems;
@@ -627,7 +642,7 @@ public class RiderFormChangeItem extends BaseItem {
                     if (alsoChange5thSlot != null)
                         RiderDriverItem.setFormItem(summon.getItemBySlot(EquipmentSlot.FEET), alsoChange5thSlot, 5);
                     if (alsoUpdateOld != null)
-                        RiderDriverItem.SetOldFormItem(summon.getItemBySlot(EquipmentSlot.FEET), alsoUpdateOld, SLOT);
+                        RiderDriverItem.setOldFormItem(summon.getItemBySlot(EquipmentSlot.FEET), alsoUpdateOld, SLOT);
 
                 } else if (!alternative.isEmpty()) {
 
@@ -670,7 +685,7 @@ public class RiderFormChangeItem extends BaseItem {
                     if (alsoChange4thSlot != null)
                         RiderDriverItem.setFormItem(player.getItemBySlot(EquipmentSlot.FEET), alsoChange4thSlot, 4);
                     if (alsoUpdateOld != null)
-                        RiderDriverItem.SetOldFormItem(player.getItemBySlot(EquipmentSlot.FEET), alsoUpdateOld, SLOT);
+                        RiderDriverItem.setOldFormItem(player.getItemBySlot(EquipmentSlot.FEET), alsoUpdateOld, SLOT);
                     if (setToArmorForm)
                         RiderDriverItem.setFormItem(player.getItemBySlot(EquipmentSlot.FEET), belt.armorFormItem, 1);
 
@@ -715,7 +730,7 @@ public class RiderFormChangeItem extends BaseItem {
         if (tick == 30)
             transformationEffect(itemStack, entity);
         if (tick == 1)
-            RiderDriverItem.UpdateOldFormItem(itemStack);
+            RiderDriverItem.updateOldFormItem(itemStack);
     }
 
     public void SetUnlimitedModels(List<RenderLayerInfo> layerInfo, ItemStack itemStack, LivingEntity rider, EquipmentSlot slot) {

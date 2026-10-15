@@ -36,6 +36,9 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Test upstream merge diagnostics
+        run: python3 -m unittest discover -s scripts/tests -v
+
       - name: Set up Gradle and validate wrapper
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:

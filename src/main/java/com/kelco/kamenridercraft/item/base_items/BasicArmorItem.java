@@ -1,7 +1,7 @@
 package com.kelco.kamenridercraft.item.base_items;
 
 
-import com.kelco.kamenridercraft.client.renderer.BasicArmorRenderer;
+import com.kelco.kamenridercraft.client.renderer.armor.BasicArmorRenderer;
 import com.kelco.kamenridercraft.data.ModItemModelProvider;
 import com.kelco.kamenridercraft.item.ModdedItemCore;
 import net.minecraft.client.model.HumanoidModel;
@@ -105,7 +105,7 @@ public class BasicArmorItem extends net.minecraft.world.item.ArmorItem implement
         return this.cache;
     }
 
-    public BasicArmorItem has_basic_model() {
+    public BasicArmorItem useBasicModel() {
         ModItemModelProvider.BASIC_ITEM_MODEL2.add(this);
         return this;
     }

@@ -1,10 +1,8 @@
 package com.kelco.kamenridercraft.item.showa;
 
 import com.kelco.kamenridercraft.KamenRiderCraftCore;
-import com.kelco.kamenridercraft.item.base_items.BaseBannerPatternItem;
-import com.kelco.kamenridercraft.item.base_items.RiderArmorItem;
-import com.kelco.kamenridercraft.item.base_items.RiderDriverItem;
-import com.kelco.kamenridercraft.item.base_items.RiderFormChangeItem;
+import com.kelco.kamenridercraft.effects.EffectCore;
+import com.kelco.kamenridercraft.item.base_items.*;
 import com.kelco.kamenridercraft.particle.ModParticles;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -28,7 +26,7 @@ public class StrongerRiderItems {
 
     //Stronger
     public static final DeferredItem<Item> STRONGER_LOGO = ITEMS.register("stronger_logo",
-            () -> new BaseBannerPatternItem(TagKey.create(Registries.BANNER_PATTERN, ResourceLocation.fromNamespaceAndPath(KamenRiderCraftCore.MOD_ID, "pattern_item/stronger")), new Item.Properties()).addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+            () -> new BaseBannerPatternItem(TagKey.create(Registries.BANNER_PATTERN, ResourceLocation.fromNamespaceAndPath(KamenRiderCraftCore.MOD_ID, "pattern_item/stronger")), new Item.Properties()).addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
 
     public static final DeferredItem<Item> ELECTRER_CORE = ITEMS.register("electrer_core",
@@ -46,14 +44,15 @@ public class StrongerRiderItems {
                             player.getX(), player.getY()+1,
                             player.getZ(), 100, 0, 0, 0, 1);
                 }
-            }.hasSD().isGlowing().hasCape().addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+            }.hasSD().isGlowing().hasCape().addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
     public static final DeferredItem<Item> CHARGE_UP = ITEMS.register("charge_up",
             () -> new RiderFormChangeItem(new Item.Properties().rarity(Rarity.UNCOMMON),"_charge_up","stronger","electrer_belt",
                     new MobEffectInstance(MobEffects.DAMAGE_BOOST, 40, 3,true,false)
                     ,new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 1,true,false)
                     ,new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 40, 2,true,false)
-                    ,new MobEffectInstance(MobEffects.JUMP, 40, 1,true,false)){
+                    ,new MobEffectInstance(MobEffects.JUMP, 40, 1,true,false)
+                    ,new MobEffectInstance(EffectCore.THUNDER_PUNCH, 40, 1,true,false)){
                 public void transformationEffect(ItemStack itemstack, LivingEntity player) {
                     super.transformationEffect(itemstack, player);
                     LightningBolt thunder = new LightningBolt(EntityType.LIGHTNING_BOLT,player.level());
@@ -68,39 +67,53 @@ public class StrongerRiderItems {
                             player.getX(), player.getY()+1,
                             player.getZ(), 100, 0, 0, 0, 1);
                 }
-            }.hasSD().changeModel("stronger.geo.json").hasCape().isGlowing().addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+            }.hasSD().changeModel("stronger.geo.json").hasCape().isGlowing().addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
     public static final DeferredItem<Item> TACKLE_CORE = ITEMS.register("tackle_core",
             () -> new RiderFormChangeItem(new Item.Properties(),"","tackle","tackle_belt",
-                    new MobEffectInstance(MobEffects.DAMAGE_BOOST, 40, 1,true,false),new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 1,true,false)
-                    ,new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 40, 2,true,false),new MobEffectInstance(MobEffects.JUMP, 40, 1,true,false))
-                    .hasSD().hasCape().isGlowing().setShowUnder().addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+                    new MobEffectInstance(MobEffects.DAMAGE_BOOST, 40, 1,true,false),
+                    new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 1,true,false),
+                    new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 40, 2,true,false),
+                    new MobEffectInstance(MobEffects.JUMP, 40, 1,true,false))
+                    .hasSD().hasCape().isGlowing().setShowUnder().addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
+    public static final DeferredItem<Item> GENERAL_SHADOW_CARD = ITEMS.register("general_shadow_card",
+            () -> new RiderFormChangeItem(new Item.Properties(),"","general_shadow","general_shadow_belt",
+                    new MobEffectInstance(EffectCore.SLASH, 40, 1,true,false),
+                    new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 1,true,false),
+                    new MobEffectInstance(MobEffects.JUMP, 40, 1,true,false))
+                    .changeModel("general_shadow.geo.json").changeBeltModel("geo/belts/general_shadow_belt.geo.json").hasSD().hasCape().addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
 
     public static final DeferredItem<Item> STRONGERHELMET = ITEMS.register("strongerhead",
-            () -> new RiderArmorItem(ArmorMaterials.DIAMOND, ArmorItem.Type.HELMET, new Item.Properties()).addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+            () -> new RiderArmorItem(ArmorMaterials.DIAMOND, ArmorItem.Type.HELMET, new Item.Properties()).addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
     public static final DeferredItem<Item> STRONGERCHESTPLATE = ITEMS.register("strongertroso",
-            () -> new RiderArmorItem(ArmorMaterials.DIAMOND, ArmorItem.Type.CHESTPLATE, new Item.Properties()).addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+            () -> new RiderArmorItem(ArmorMaterials.DIAMOND, ArmorItem.Type.CHESTPLATE, new Item.Properties()).addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
     public static final DeferredItem<Item> STRONGERLEGGINGS = ITEMS.register("strongerlegs",
-            () -> new RiderArmorItem(ArmorMaterials.DIAMOND, ArmorItem.Type.LEGGINGS, new Item.Properties()).addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+            () -> new RiderArmorItem(ArmorMaterials.DIAMOND, ArmorItem.Type.LEGGINGS, new Item.Properties()).addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
     public static final DeferredItem<Item> ELECTRER = ITEMS.register("electrer",
             () -> new RiderDriverItem(ArmorMaterials.DIAMOND,"stronger",ELECTRER_CORE ,STRONGERHELMET,STRONGERCHESTPLATE,STRONGERLEGGINGS , new Item.Properties())
-                    .hasSDForm().isA1().addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+                    .hasSDForm().isA1().addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
     public static final DeferredItem<Item> DARK_ELECTRER = ITEMS.register("dark_electrer",
             () -> new RiderDriverItem(ArmorMaterials.DIAMOND,"dark_stronger",ELECTRER_CORE ,STRONGERHELMET,STRONGERCHESTPLATE,STRONGERLEGGINGS , new Item.Properties()).hideBeltFormInfo()
-                    .overrideBeltText("dark_electrer_belt").addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+                    .overrideBeltText("dark_electrer_belt").addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
     public static final DeferredItem<Item> TACKLE_BELT = ITEMS.register("tackle_belt",
             () -> new RiderDriverItem(ArmorMaterials.DIAMOND,"tackle",TACKLE_CORE ,STRONGERHELMET,STRONGERCHESTPLATE,STRONGERLEGGINGS , new Item.Properties())
-                    .hasSDForm().addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+                    .hasSDForm().addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
     public static final DeferredItem<Item> BLACK_TACKLE_BELT = ITEMS.register("black_tackle_belt",
             () -> new RiderDriverItem(ArmorMaterials.DIAMOND,"black_tackle",TACKLE_CORE ,STRONGERHELMET,STRONGERCHESTPLATE,STRONGERLEGGINGS , new Item.Properties())
-                    .overrideBeltText("black_tackle_belt").hideBeltFormInfo().has_basic_model().addToList(KamenRiderCraftCore.CreativeTabRegistry.STRONGER_TAB_ITEM));
+                    .overrideBeltText("black_tackle_belt").hideBeltFormInfo().useBasicModel().addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
+    public static final DeferredItem<Item> GENERAL_SHADOW_BELT = ITEMS.register("general_shadow_belt",
+            () -> new RiderDriverItem(ArmorMaterials.DIAMOND,"general_shadow",GENERAL_SHADOW_CARD ,STRONGERHELMET,STRONGERCHESTPLATE,STRONGERLEGGINGS , new Item.Properties())
+                    .hasSDForm().addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
+
+    public static final DeferredItem<Item> SHADOW_SWORD = ITEMS.register("shadow_sword",
+            () -> new BaseSwordItem(Tiers.DIAMOND, 6, -2.4F, new Item.Properties()).addToList(com.kelco.kamenridercraft.item.KRCCreativeTabs.STRONGER_TAB_ITEM));
 
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);

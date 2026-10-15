@@ -24,6 +24,12 @@ jobs:
       changed: ${{ steps.merge.outputs.changed }}
       head: ${{ steps.merge.outputs.head }}
     steps:
+      - name: Check out sync tools
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts
+
       - name: Sync fork while preserving local commits
         id: merge
         env:
@@ -39,10 +45,11 @@ jobs:
           fi
 
           before=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
+          printf 'before=%s\n' "$before" >> "$GITHUB_OUTPUT"
           if ! gh api --method POST "repos/$GH_REPO/merge-upstream" \
             -f branch=main > "$RUNNER_TEMP/upstream-sync.json"; then
             cat "$RUNNER_TEMP/upstream-sync.json"
-            echo '::error::Upstream sync failed. Resolve any reported merge conflict in main, then rerun this workflow. No force reset is performed.'
+            echo '::error::Upstream sync failed. The diagnostics step will report conflicting files; resolve them in main and rerun. No force reset is performed.'
             exit 1
           fi
           cat "$RUNNER_TEMP/upstream-sync.json"
@@ -62,6 +69,25 @@ jobs:
               printf 'Already up to date. Scheduled runs skip the build; manual runs rebuild main.\n'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Diagnose failed upstream merge
+        if: failure() && steps.merge.outcome == 'failure'
+        env:
+          SYNC_BASE_SHA: ${{ steps.merge.outputs.before || github.sha }}
+        shell: bash
+        run: |
+          bash scripts/diagnose-upstream.sh \
+            https://github.com/win10ogod/Kamen_Rider_Craft.git "$SYNC_BASE_SHA" \
+            https://github.com/kelcok22/Kamen_Rider_Craft.git "$RUNNER_TEMP/upstream-sync-diagnostics"
+
+      - name: Upload upstream merge diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: upstream-sync-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/upstream-sync-diagnostics/*.txt
+          if-no-files-found: ignore
+          retention-days: 14
 
   build:
     name: Build synced source

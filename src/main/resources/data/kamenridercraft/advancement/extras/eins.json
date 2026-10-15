@@ -1,0 +1,49 @@
+{
+	"display": {
+		"icon": {
+			"id": "kamenridercraft:cyborg_super_energy_converter"
+		},
+		"title": {
+			"translate": "advancements.kamenridercraft.extras.eins.title"
+		},
+		"description": {
+			"translate": "advancements.kamenridercraft.extras.eins.description"
+		},
+		"frame": "task",
+		"show_toast": true,
+		"announce_to_chat": true,
+		"hidden": false
+	},
+	"parent": "kamenridercraft:extras",
+	"criteria": {
+		"requirement": {
+			"trigger": "minecraft:inventory_changed",
+			"conditions": {
+				"player": {
+					"equipment": {
+						"head": {
+							"items": [
+								"kamenridercraft:ichigohead"
+							]
+						},
+						"chest": {
+							"items": [
+								"kamenridercraft:ichigotroso"
+							]
+						},
+						"legs": {
+							"items": [
+								"kamenridercraft:ichigolegs"
+							]
+						},
+						"feet": {
+							"items": [
+								"kamenridercraft:cyborg_super_energy_converter"
+							]
+						}
+					}
+				}
+			}
+		}
+	}
+}

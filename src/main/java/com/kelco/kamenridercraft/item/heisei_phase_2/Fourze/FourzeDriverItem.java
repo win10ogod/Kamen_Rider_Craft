@@ -1,12 +1,11 @@
 package com.kelco.kamenridercraft.item.heisei_phase_2.Fourze;
 
 import com.kelco.kamenridercraft.KamenRiderCraftCore;
-import com.kelco.kamenridercraft.client.renderer.layers.render_layer_util.RenderLayerInfo;
 import com.kelco.kamenridercraft.effects.EffectCore;
 import com.kelco.kamenridercraft.item.base_items.RiderArmorItem;
 import com.kelco.kamenridercraft.item.base_items.RiderDriverItem;
 import com.kelco.kamenridercraft.item.heisei_phase_2.FourzeRiderItems;
-import com.kelco.kamenridercraft.world.attribute.Attributes;
+import com.kelco.kamenridercraft.world.attribute.KRCAttributes;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -15,7 +14,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -24,7 +22,6 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.registries.DeferredItem;
 
 import java.util.List;
-import java.util.Objects;
 
 public class FourzeDriverItem extends RiderDriverItem {
     public FourzeDriverItem(Holder<ArmorMaterial> material, String rider, DeferredItem<Item> baseFormItem, DeferredItem<Item> head, DeferredItem<Item> torso, DeferredItem<Item> legs, Properties properties) {
@@ -79,27 +76,6 @@ public class FourzeDriverItem extends RiderDriverItem {
     }
 
     @Override
-    public void SetUnlimitedModels(List<RenderLayerInfo> layerInfo,ItemStack itemStack, LivingEntity rider,EquipmentSlot slot) {
-
-        if (slot==EquipmentSlot.HEAD&isTransformed(rider)) {
-            boolean fly = rider instanceof Player player && (player.getAbilities().flying || player.isFallFlying());
-            if (getFormItem(itemStack, 1) != FourzeRiderItems.BLANK_CIRCLE_ASTROSWITCH.get() & getFormItem(itemStack, 1) != null) {
-                layerInfo.add(new RenderLayerInfo(riderName + getFormItem(itemStack, 1).getFormName(fly), null));
-            }
-            if (getFormItem(itemStack, 2) != FourzeRiderItems.BLANK_CROSS_ASTROSWITCH.get() & getFormItem(itemStack, 2) != null) {
-                layerInfo.add(new RenderLayerInfo(riderName + getFormItem(itemStack, 2).getFormName(fly), null));
-            }
-            if (getFormItem(itemStack, 3) != FourzeRiderItems.BLANK_TRIANGLE_ASTROSWITCH.get() & getFormItem(itemStack, 3) != null) {
-                layerInfo.add(new RenderLayerInfo(riderName + getFormItem(itemStack, 3).getFormName(fly), null));
-            }
-            if (getFormItem(itemStack, 4) != FourzeRiderItems.BLANK_SQUARE_ASTROSWITCH.get() & getFormItem(itemStack, 4) != null) {
-                layerInfo.add(new RenderLayerInfo(riderName + getFormItem(itemStack, 4).getFormName(fly), null));
-            }
-        }
-        super.SetUnlimitedModels(layerInfo,itemStack,rider,slot);
-    }
-
-    @Override
     public void setExtraFormItem(ItemStack belt, Item ITEM, int SLOT, CompoundTag tag) {
         if ((getFormItem(belt, 5) == FourzeRiderItems.FOURZE_ELEK_STATES.get() && getFormItem(belt, 1) != FourzeRiderItems.ELEK_ASTROSWITCH.get())
                 || (getFormItem(belt, 5) == FourzeRiderItems.FOURZE_FIRE_STATES.get() && getFormItem(belt, 1) != FourzeRiderItems.FIRE_ASTROSWITCH.get())
@@ -115,7 +91,7 @@ public class FourzeDriverItem extends RiderDriverItem {
         if (getFormItem(belt, 5) == FourzeRiderItems.FOURZE_METEOR_NADESHIKO_FUSION_STATES.get()
                 || getFormItem(belt, 5) == FourzeRiderItems.FOURZE_FUSION_STATES.get()) {
             if (getFormItem(belt, 1) != FourzeRiderItems.BLANK_CIRCLE_ASTROSWITCH.get()
-                    || getFormItem(belt, 2) != FourzeRiderItems.BLANK_CROSS_ASTROSWITCH.get()
+                    || getFormItem(belt, 2) != FourzeRiderItems.BLANK_CROSS_ASTROSWITCH.get()&&getFormItem(belt, 2) != FourzeRiderItems.NADESHIKO_ASTROSWITCH_FUSION.get()
                     || getFormItem(belt, 3) != FourzeRiderItems.BLANK_TRIANGLE_ASTROSWITCH.get()) {
                 setFormItemNoExtra(belt, FourzeRiderItems.FOURZE_BASE_STATES.asItem(), 5);
                 setFormItemNoExtra(belt, FourzeRiderItems.BLANK_SQUARE_ASTROSWITCH.asItem(), 4);
@@ -164,11 +140,11 @@ public class FourzeDriverItem extends RiderDriverItem {
 
     @Override
     public String getText(ItemStack itemstack, EquipmentSlot equipmentSlot, LivingEntity livingEntity, String riderName) {
-        boolean fly = livingEntity.getAttribute(Attributes.WINGS_OUT).getBaseValue() == 1;
+        boolean fly = livingEntity.getAttribute(KRCAttributes.WINGS_OUT).getBaseValue() == 1;
         if (equipmentSlot == EquipmentSlot.FEET) {
             return "belts/" + getFormItem(itemstack, 5).getBeltTex();
         }
-        if (equipmentSlot != EquipmentSlot.CHEST) return "blank";
+        if (equipmentSlot != EquipmentSlot.HEAD) return "blank";
 
         else return riderName + getFormItem(itemstack, 5).getFormName(fly);
     }
@@ -176,8 +152,8 @@ public class FourzeDriverItem extends RiderDriverItem {
 
     public ResourceLocation getModelResource(ItemStack itemstack, RiderArmorItem animatable, EquipmentSlot slot, LivingEntity livingEntity) {
 
-        if (slot == EquipmentSlot.CHEST) {
-            if (getFormItem(itemstack, 1).hasWingsIfFlying() && livingEntity.getAttribute(Attributes.WINGS_OUT).getBaseValue() == 1) {
+        if (slot == EquipmentSlot.HEAD) {
+            if (getFormItem(itemstack, 1).hasWingsIfFlying() && livingEntity.getAttribute(KRCAttributes.WINGS_OUT).getBaseValue() == 1) {
                 return ResourceLocation.fromNamespaceAndPath(KamenRiderCraftCore.MOD_ID, "geo/armor/" + getFormItem(itemstack, 5).getFlyingModel(this.riderName));
             }
             return ResourceLocation.fromNamespaceAndPath(KamenRiderCraftCore.MOD_ID, "geo/armor/" + getFormItem(itemstack, 5).getModel(this.riderName));
@@ -191,10 +167,10 @@ public class FourzeDriverItem extends RiderDriverItem {
         }
         if (isTransformed(livingEntity)) {
             switch (currentSlot) {
-                case HEAD, CHEST -> {
+                case HEAD-> {
                     return true;
                 }
-                case LEGS -> {
+                case LEGS ,CHEST -> {
                     return false;
                 }
                 default -> {
@@ -208,16 +184,11 @@ public class FourzeDriverItem extends RiderDriverItem {
     @Override
     public boolean getPartsForSlot(ItemStack itemstack, EquipmentSlot currentSlot, String part) {
         switch (currentSlot) {
-            case CHEST -> {
-                return true;
-            }
             case HEAD -> {
                 return true;
-                /**if (Objects.equals(part, "rightLeg")) return true;
-                if (Objects.equals(part, "leftLeg")) return true;
-                if (Objects.equals(part, "rightArm")) return true;
-                if (Objects.equals(part, "leftArm")) return true;
-                 **/
+            }
+            case CHEST-> {
+                return false;
             }
         }
         return false;

@@ -1,9 +1,8 @@
 package com.kelco.kamenridercraft.client.gui.overlays;
 
-import com.kelco.kamenridercraft.KamenRiderCraftCore;
 import com.kelco.kamenridercraft.item.base_items.RiderDriverItem;
 import com.kelco.kamenridercraft.item.extra_riders.ExtraRiderItems;
-import com.kelco.kamenridercraft.world.attribute.Attributes;
+import com.kelco.kamenridercraft.world.attribute.KRCAttributes;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -13,23 +12,40 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.common.Mod;
+import org.jetbrains.annotations.NotNull;
 
 import static com.kelco.kamenridercraft.KamenRiderCraftCore.MOD_ID;
 import static com.kelco.kamenridercraft.abilities.ClientAbilityUtil.clientGetAbility;
 import static com.kelco.kamenridercraft.abilities.ClientAbilityUtil.returnAbilityIcon;
 
-@Mod(value = KamenRiderCraftCore.MOD_ID, dist = Dist.CLIENT)
 public class AbilityHudOverlay implements LayeredDraw.Layer {
     public static final AbilityHudOverlay instance = new AbilityHudOverlay();
-    private static final ResourceLocation UNFILLED_ACTION_BAR = ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/hud/action_meter_background.png");
-    private static final ResourceLocation FILLED_ACTION_BAR = ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/hud/action_meter_progress.png");
-    private static final ResourceLocation ABILITY_HOLDER = ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/hud/ability_overlay.png");
+    private static final ResourceLocation UNFILLED_ACTION_BAR =
+            ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/hud/action_meter_background.png");
+    private static final ResourceLocation FILLED_ACTION_BAR =
+            ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/hud/action_meter_progress.png");
+    private static final ResourceLocation ABILITY_HOLDER =
+            ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/hud/ability_overlay.png");
     private static ResourceLocation ABILITY_ONE = null;
     private static ResourceLocation ABILITY_TWO = null;
 
-    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+    public static boolean shouldShowAbilityMeter(Player player) {
+        Item driverSlot = player.getItemBySlot(EquipmentSlot.FEET).getItem();
+        if (player.isCreative()) {
+            return false;
+        }
+        if (driverSlot instanceof RiderDriverItem && ((RiderDriverItem) driverSlot).isTransformed(player)) {
+            return !((RiderDriverItem) driverSlot).riderName.toLowerCase().contains("ohma");
+        }
+        return true;
+    }
+
+    public static boolean shouldShowIcons(Player player) {
+        Item driverSlot = player.getItemBySlot(EquipmentSlot.FEET).getItem();
+        return driverSlot instanceof RiderDriverItem && ((RiderDriverItem) driverSlot).isTransformed(player) || player.getItemBySlot(EquipmentSlot.HEAD).getItem() == ExtraRiderItems.ICHIGO_MASK.get();
+    }
+
+    public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
         Player player = Minecraft.getInstance().player;
         if (Minecraft.getInstance().options.hideGui || player.isSpectator() || !shouldShowIcons(player)) {
             return;
@@ -38,8 +54,8 @@ public class AbilityHudOverlay implements LayeredDraw.Layer {
         int screenXCenter = (int) (guiGraphics.guiWidth() * 0.5);
         int screenYCenter = (int) (guiGraphics.guiHeight() * 0.5);
 
-        int maxActionMeter = (int) player.getAttribute(Attributes.MAX_ABILITY_METER).getValue();
-        int actionProgress = (int) player.getAttribute(Attributes.ABILITY_METER).getValue();
+        int maxActionMeter = (int) player.getAttribute(KRCAttributes.MAX_ABILITY_METER).getValue();
+        int actionProgress = (int) player.getAttribute(KRCAttributes.ABILITY_METER).getValue();
         int meterDisplay = (int) (49 * Math.min((actionProgress / (double) maxActionMeter), 1));
 
         RenderSystem.enableBlend();
@@ -55,18 +71,18 @@ public class AbilityHudOverlay implements LayeredDraw.Layer {
             ABILITY_ONE = null;
             ABILITY_TWO = null;
             if (driverItem.isTransformed(player)) {
-                if (!(driverItem.abilitySlotOne == null)) {
-                    ABILITY_ONE = driverItem.abilitySlotOne;
+                if (!(driverItem.cachedAbilityOne == null)) {
+                    ABILITY_ONE = driverItem.cachedAbilityOne;
                 } else {
                     if (!clientGetAbility(1).isEmpty()) {
-                        driverItem.abilitySlotOne = returnAbilityIcon(clientGetAbility(1).getFirst().toLowerCase().substring(1));
+                        driverItem.cachedAbilityOne = returnAbilityIcon(clientGetAbility(1).getFirst().toLowerCase().substring(1));
                     }
                 }
-                if (!(driverItem.abilitySlotTwo == null)) {
-                    ABILITY_TWO = driverItem.abilitySlotTwo;
+                if (!(driverItem.cachedAbilityTwo == null)) {
+                    ABILITY_TWO = driverItem.cachedAbilityTwo;
                 } else {
                     if (!clientGetAbility(2).isEmpty()) {
-                        driverItem.abilitySlotTwo = returnAbilityIcon(clientGetAbility(2).getFirst().toLowerCase().substring(1));
+                        driverItem.cachedAbilityTwo = returnAbilityIcon(clientGetAbility(2).getFirst().toLowerCase().substring(1));
                     }
                 }
             }
@@ -88,21 +104,5 @@ public class AbilityHudOverlay implements LayeredDraw.Layer {
                 }
             }
         }
-    }
-
-    public static boolean shouldShowAbilityMeter(Player player) {
-        Item driverSlot = player.getItemBySlot(EquipmentSlot.FEET).getItem();
-        if (player.isCreative()) {
-            return false;
-        }
-        if (driverSlot instanceof RiderDriverItem && ((RiderDriverItem) driverSlot).isTransformed(player)) {
-            return !((RiderDriverItem) driverSlot).riderName.toLowerCase().contains("ohma");
-        }
-        return true;
-    }
-
-    public static boolean shouldShowIcons(Player player) {
-        Item driverSlot = player.getItemBySlot(EquipmentSlot.FEET).getItem();
-        return driverSlot instanceof RiderDriverItem && ((RiderDriverItem) driverSlot).isTransformed(player) || player.getItemBySlot(EquipmentSlot.HEAD).getItem() == ExtraRiderItems.ICHIGO_MASK.get();
     }
 }

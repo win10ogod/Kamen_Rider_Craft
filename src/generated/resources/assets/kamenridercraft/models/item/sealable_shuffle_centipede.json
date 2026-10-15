@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "kamenridercraft:item/float_dragonfly"
+    "layer0": "kamenridercraft:item/shuffle_centipede"
   }
 }

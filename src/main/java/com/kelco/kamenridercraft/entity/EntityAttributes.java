@@ -25,9 +25,10 @@ public class EntityAttributes {
         event.put(MobsCore.SHOCKER_RIDER.get(), ShockerRidersEntity.setAttributes().build());
         event.put(MobsCore.DESTRON_COMBATMAN.get(), DestronCombatmanEntity.setAttributes().build());
         event.put(MobsCore.GOD_WARFARE_AGENT.get(), GODWarfareAgentEntity.setAttributes().build());
-        event.put(MobsCore.APOLLOGIST.get(), ApollogeistEntity.setAttributes().build());
+        event.put(MobsCore.APOLLOGEIST.get(), ApollogeistEntity.setAttributes().build());
         event.put(MobsCore.RED_FOLLWER.get(), RedFollowerEntity.setAttributes().build());
         event.put(MobsCore.BLACK_SATAN_SOLDIER.get(), BlackSatanSoldierEntity.setAttributes().build());
+        event.put(MobsCore.GENERAL_SHADOW.get(), ApollogeistEntity.setAttributes().build());
         event.put(MobsCore.ARI_COMMANDO.get(), AriCommandoEntity.setAttributes().build());
         event.put(MobsCore.DOGMA_FIGHTER.get(), DogmaFighterEntity.setAttributes().build());
         event.put(MobsCore.COMBAT_ROID.get(), CombatRoidEntity.setAttributes().build());
@@ -42,12 +43,15 @@ public class EntityAttributes {
 
     private static void heiseiPhaseOneAttributes (EntityAttributeCreationEvent event) {
         event.put(MobsCore.ZU_GUMUN_BA.get(), ZuGumunBaEntity.setAttributes().build());
+        event.put(MobsCore.GO_CLASS_GRONGI.get(), ZuGumunBaEntity.setAttributes().build());
         event.put(MobsCore.N_DAGUVA_ZEBA.get(), NDaguvaZebaEntity.setAttributes().build());
 
         event.put(MobsCore.PANTHERAS_LUTEUS.get(), PantherasLuteusEntity.setAttributes().build());
         event.put(MobsCore.EL_OF_THE_WATER.get(), ElOfTheWaterEntity.setAttributes().build());
         event.put(MobsCore.ANGUIS_MASCULUS.get(), AnguisMasculusEntity.setAttributes().build());
         event.put(MobsCore.ANOTHER_AGITO.get(), AnotherAgitoEntity.setAttributes().build());
+        event.put(MobsCore.GILL_AGITO.get(), GillAgitoEntity.setAttributes().build());
+        event.put(MobsCore.SHINING_GILL_AGITO.get(), ShiningGillAgitoEntity.setAttributes().build());
 
         event.put(MobsCore.MIRROR_RIDER.get(), MirrorRiderEntity.setAttributes().build());
         event.put(MobsCore.ODIN.get(), OdinEntity.setAttributes().build());
@@ -57,6 +61,14 @@ public class EntityAttributes {
         event.put(MobsCore.MUEZ.get(), MuezEntity.setAttributes().build());
         event.put(MobsCore.FAIZ.get(), FaizEntity.setAttributes().build());
         event.put(MobsCore.AUTO_VAJIN_ROBO.get(), AutoVajinRoboEntity.setAttributes().build());
+
+        event.put(MobsCore.UNDEAD.get(), UndeadEntity.setAttributes().build());
+        event.put(MobsCore.ACE_UNDEAD.get(), AceUndeadEntity.setAttributes().build());
+        event.put(MobsCore.JACK_UNDEAD.get(), JackUndeadEntity.setAttributes().build());
+        event.put(MobsCore.QUEEN_UNDEAD.get(), QueenUndeadEntity.setAttributes().build());
+        event.put(MobsCore.KING_UNDEAD.get(), KingUndeadEntity.setAttributes().build());
+        event.put(MobsCore.JOKER_UNDEAD.get(), JokerUndeadEntity.setAttributes().build());
+        event.put(MobsCore.ALBINO_JOKER_UNDEAD.get(), AlbinoJokerUndeadEntity.setAttributes().build());
 
         event.put(MobsCore.BAKENEKO.get(), BakenekoEntity.setAttributes().build());
         event.put(MobsCore.MIDAREDOUJI.get(), MidaredoujiEntity.setAttributes().build());
@@ -335,6 +347,13 @@ public class EntityAttributes {
         event.put(MobsCore.KUJAKU_CAN.get(), KujakuCanEntity.setAttributes().build());
         event.put(MobsCore.PTERA_CAN.get(), PteraCanEntity.setAttributes().build());
         event.put(MobsCore.TORIKERA_CAN.get(), TorikeraCanEntity.setAttributes().build());
+
+        event.put(MobsCore.BURGERMEAL.get(), BurgermealEntity.setAttributes().build());
+        event.put(MobsCore.POTECHOKIN.get(), PotechokinEntity.setAttributes().build());
+        event.put(MobsCore.HULASHAKE.get(), HulashakeEntity.setAttributes().build());
+        event.put(MobsCore.HORUWANKOV.get(), HoruwankovEntity.setAttributes().build());
+        event.put(MobsCore.SOFTONYA.get(), SoftonyaEntity.setAttributes().build());
+        event.put(MobsCore.NUGGEGYROIKA.get(), NuggegyroikaEntity.setAttributes().build());
 
         event.put(MobsCore.RIDER_SUMMON.get(), RiderSummonEntity.setAttributes().build());
         event.put(MobsCore.COMPLETE_SUMMON.get(), CompleteSummonEntity.setAttributes().build());

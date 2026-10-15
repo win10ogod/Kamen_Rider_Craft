@@ -5,7 +5,7 @@ import com.kelco.kamenridercraft.entity.mobs.summons.LegendarySummonEntity;
 import com.kelco.kamenridercraft.item.base_items.RiderDriverItem;
 import com.kelco.kamenridercraft.item.base_items.RiderFormChangeItem;
 import com.kelco.kamenridercraft.network.payload.*;
-import com.kelco.kamenridercraft.world.attribute.Attributes;
+import com.kelco.kamenridercraft.world.attribute.KRCAttributes;
 import com.zigythebird.playeranim.animation.PlayerAnimResources;
 import com.zigythebird.playeranim.animation.PlayerAnimationController;
 import com.zigythebird.playeranim.api.PlayerAnimationAccess;
@@ -53,19 +53,19 @@ public class ClientPayloadHandler {
             if (!context.player().getStringUUID().equals(data.id())) {
                 switch (data.attributeName()) {
                     case "ball_rot" -> {
-                        Objects.requireNonNull(entity.getAttribute(Attributes.BALL_ROT_OLD)).setBaseValue(Objects.requireNonNull(entity.getAttribute(Attributes.BALL_ROT)).getBaseValue());
-                        Objects.requireNonNull(entity.getAttribute(Attributes.BALL_ROT)).setBaseValue(data.valueChange());
+                        Objects.requireNonNull(entity.getAttribute(KRCAttributes.BALL_ROT_OLD)).setBaseValue(Objects.requireNonNull(entity.getAttribute(KRCAttributes.BALL_ROT)).getBaseValue());
+                        Objects.requireNonNull(entity.getAttribute(KRCAttributes.BALL_ROT)).setBaseValue(data.valueChange());
                     }
                     case "wheel_rot" -> {
-                        Objects.requireNonNull(entity.getAttribute(Attributes.WHEEL_ROT_OLD)).setBaseValue(Objects.requireNonNull(entity.getAttribute(Attributes.WHEEL_ROT)).getBaseValue());
-                        Objects.requireNonNull(entity.getAttribute(Attributes.WHEEL_ROT)).setBaseValue(data.valueChange());
+                        Objects.requireNonNull(entity.getAttribute(KRCAttributes.WHEEL_ROT_OLD)).setBaseValue(Objects.requireNonNull(entity.getAttribute(KRCAttributes.WHEEL_ROT)).getBaseValue());
+                        Objects.requireNonNull(entity.getAttribute(KRCAttributes.WHEEL_ROT)).setBaseValue(data.valueChange());
                     }
                     case "cape_rot" -> {
-                        Objects.requireNonNull(entity.getAttribute(Attributes.CAPE_ROT_OLD)).setBaseValue(Objects.requireNonNull(entity.getAttribute(Attributes.CAPE_ROT)).getBaseValue());
-                        Objects.requireNonNull(entity.getAttribute(Attributes.CAPE_ROT)).setBaseValue(data.valueChange());
+                        Objects.requireNonNull(entity.getAttribute(KRCAttributes.CAPE_ROT_OLD)).setBaseValue(Objects.requireNonNull(entity.getAttribute(KRCAttributes.CAPE_ROT)).getBaseValue());
+                        Objects.requireNonNull(entity.getAttribute(KRCAttributes.CAPE_ROT)).setBaseValue(data.valueChange());
                     }
                     case "wing_out" ->
-                            Objects.requireNonNull(entity.getAttribute(Attributes.WINGS_OUT)).setBaseValue(data.valueChange());
+                            Objects.requireNonNull(entity.getAttribute(KRCAttributes.WINGS_OUT)).setBaseValue(data.valueChange());
                 }
             }
         }
@@ -94,7 +94,7 @@ public class ClientPayloadHandler {
                 if (riderName.equals("ooo")) {
                     animation = oooAnimCheck(posingRider);
                 } else if (riderName.equals("ghost") || riderName.equals("specter") || riderName.equals("necrom")) {
-                    if (Objects.requireNonNull(posingRider.getAttribute(Attributes.POSE_MODEL_MODIFIER)).getValue() >= 1) {
+                    if (Objects.requireNonNull(posingRider.getAttribute(KRCAttributes.POSE_MODEL_MODIFIER)).getValue() >= 1) {
                         animation = getAnim("default.hoodie_off");
                     } else {
                         animation = getAnim("default.hoodie_on");
@@ -136,7 +136,7 @@ public class ClientPayloadHandler {
                 AbstractClientPlayer animationTarget = (AbstractClientPlayer) Minecraft.getInstance().level.getPlayerByUUID(UUID.fromString(data.UUID()));
                 assert animationTarget != null;
                 PlayerAnimationController controller = switch (data.controller()) {
-                    case "attack" ->
+                    case "attack", "fourze_position" ->
                             (PlayerAnimationController) PlayerAnimationAccess.getPlayerAnimationLayer(animationTarget, ATTACK_LAYER_ID);
                     case "pose" ->
                             (PlayerAnimationController) PlayerAnimationAccess.getPlayerAnimationLayer(animationTarget, POSE_LAYER_ID);
@@ -150,7 +150,9 @@ public class ClientPayloadHandler {
                 if (!data.forceNextPose() && Objects.requireNonNull(controller).isPlayingTriggeredAnimation()) {
                     controller.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(10, EasingType.EASE_IN_ELASTIC), animation);
                 } else {
-                    controller.addModifierBefore(AbstractFadeModifier.standardFadeIn(5, EasingType.EASE_IN_ELASTIC));
+                    if (!data.controller().contains("position")) {
+                        controller.addModifierBefore(AbstractFadeModifier.standardFadeIn(5, EasingType.EASE_IN_ELASTIC));
+                    }
                     controller.triggerAnimation(animation);
                 }
             } catch (Exception e) {

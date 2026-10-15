@@ -47,6 +47,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import static com.kelco.kamenridercraft.item.heisei_phase_1.DecadeRiderItems.DIEND_ILLUSION_CARD;
+import static com.kelco.kamenridercraft.item.heisei_phase_1.DecadeRiderItems.DIEND_NEO_ILLUSION_CARD;
+
 
 public class AttackRideCardItem extends BaseItem {
     public String[] FORMS;
@@ -94,15 +97,18 @@ public class AttackRideCardItem extends BaseItem {
             Vec3 look = player.getLookAngle();
             switch (special) {
                 case "illusion":
-                    for (int i = 0; i < 2; i++) {
+                    for (int i = 0; i < 2; ++i) {
                         RiderSummonEntity illusion = MobsCore.RIDER_SUMMON.get().create(level);
                         if (illusion != null) {
                             illusion.moveTo(player.getX(), player.getY() + 1, player.getZ(), player.getYRot(), player.getXRot());
-                            illusion.setItemSlot(EquipmentSlot.HEAD, player.getItemBySlot(EquipmentSlot.HEAD));
-                            illusion.setItemSlot(EquipmentSlot.CHEST, player.getItemBySlot(EquipmentSlot.CHEST));
-                            illusion.setItemSlot(EquipmentSlot.LEGS, player.getItemBySlot(EquipmentSlot.LEGS));
-                            illusion.setItemSlot(EquipmentSlot.FEET, player.getItemBySlot(EquipmentSlot.FEET));
-                            if (player.getItemBySlot(EquipmentSlot.FEET).getItem() == DecadeRiderItems.DIEND_BELT.get()) {
+                            illusion.setItemSlot(EquipmentSlot.HEAD, player.getItemBySlot(EquipmentSlot.HEAD).copy());
+                            illusion.setItemSlot(EquipmentSlot.CHEST, player.getItemBySlot(EquipmentSlot.CHEST).copy());
+                            illusion.setItemSlot(EquipmentSlot.LEGS, player.getItemBySlot(EquipmentSlot.LEGS).copy());
+                            illusion.setItemSlot(EquipmentSlot.FEET, player.getItemBySlot(EquipmentSlot.FEET).copy());
+                            if (this == DIEND_NEO_ILLUSION_CARD.get()) {
+                                illusion.NAME = "neo_diend_illusion";
+                                illusion.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(DecadeRiderItems.NEO_DIENDRIVER.get()));
+                            } else if (this == DIEND_ILLUSION_CARD.get()) {
                                 illusion.NAME = "diend_illusion";
                                 illusion.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(DecadeRiderItems.DIENDRIVER.get()));
                             } else {
@@ -136,8 +142,9 @@ public class AttackRideCardItem extends BaseItem {
                 case "barrier":
                     BlockPos pos = new BlockPos((int) (Math.floor(player.getX() + look.x * 3)), (int) (Math.floor(player.getEyeY() + look.y * 3)), (int) (Math.floor(player.getZ() + look.z * 3)));
 
-                    for (int i = 0; i < 2; i++) {
-                        if (level.getBlockState(pos).getDestroySpeed(level, pos) < 0.2) level.destroyBlock(pos, true);
+                    for (int i = 0; i < 2; ++i) {
+                        if (level.getBlockState(pos).getDestroySpeed(level, pos) < 0.2)
+                            level.destroyBlock(pos, true);
                         if (level.isEmptyBlock(pos) || level.getFluidState(pos) != Fluids.EMPTY.defaultFluidState())
                             level.setBlock(pos, Blocks.LIGHT_BLUE_STAINED_GLASS.defaultBlockState(), 3);
                         pos = pos.below(1);
@@ -194,7 +201,8 @@ public class AttackRideCardItem extends BaseItem {
         player.awardStat(Stats.ITEM_USED.get(this));
     }
 
-    public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand interactionHand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand
+            interactionHand) {
 
         ItemStack itemstack = player.getItemInHand(interactionHand);
 

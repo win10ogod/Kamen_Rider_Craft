@@ -1,10 +1,10 @@
 package com.kelco.kamenridercraft.events;
 
 import com.kelco.kamenridercraft.block.RiderBlocks;
-import com.kelco.kamenridercraft.client.models.DoggaModel;
-import com.kelco.kamenridercraft.client.models.ElementaryInvesModel;
-import com.kelco.kamenridercraft.client.models.HeartRoidmudeModel;
-import com.kelco.kamenridercraft.client.models.MidaredoujiModel;
+import com.kelco.kamenridercraft.client.model.entity.allies.DoggaModel;
+import com.kelco.kamenridercraft.client.model.entity.allies.MidaredoujiModel;
+import com.kelco.kamenridercraft.client.model.entity.mob.ElementaryInvesModel;
+import com.kelco.kamenridercraft.client.model.entity.mob.HeartRoidmudeModel;
 import com.kelco.kamenridercraft.effects.EffectCore;
 import com.kelco.kamenridercraft.entity.EntityAttributes;
 import com.kelco.kamenridercraft.entity.mobs.MobsCore;
@@ -22,17 +22,19 @@ import com.kelco.kamenridercraft.item.extra_riders.GRiderItems;
 import com.kelco.kamenridercraft.item.extra_riders.RideKamensItems;
 import com.kelco.kamenridercraft.item.heisei_phase_1.*;
 import com.kelco.kamenridercraft.item.heisei_phase_1.decade.ZeinCardItem;
-import com.kelco.kamenridercraft.item.heisei_phase_2.GaimRiderItems;
-import com.kelco.kamenridercraft.item.heisei_phase_2.GhostRiderItems;
-import com.kelco.kamenridercraft.item.heisei_phase_2.ZiORiderItems;
+import com.kelco.kamenridercraft.item.heisei_phase_2.*;
+import com.kelco.kamenridercraft.item.heisei_phase_2.ghost.GhostDriverItem;
 import com.kelco.kamenridercraft.item.misc_items.MusicDiscItems;
-import com.kelco.kamenridercraft.item.reiwa.*;
+import com.kelco.kamenridercraft.item.reiwa.GavvRiderItems;
+import com.kelco.kamenridercraft.item.reiwa.GotchardRiderItems;
+import com.kelco.kamenridercraft.item.reiwa.ReviceRiderItems;
+import com.kelco.kamenridercraft.item.reiwa.ZeroOneRiderItems;
 import com.kelco.kamenridercraft.item.reiwa.gavv.GochipodItem;
 import com.kelco.kamenridercraft.item.showa.*;
 import com.kelco.kamenridercraft.level.ModGameRules;
 import com.kelco.kamenridercraft.particle.ModParticles;
 import com.kelco.kamenridercraft.util.DimensionUtil;
-import com.kelco.kamenridercraft.world.attribute.Attributes;
+import com.kelco.kamenridercraft.world.attribute.KRCAttributes;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -59,6 +61,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.alchemy.PotionBrewing;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.GameRules;
@@ -79,6 +83,7 @@ import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.event.AnvilUpdateEvent;
 import net.neoforged.neoforge.event.ItemStackedOnOtherEvent;
+import net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.living.*;
@@ -92,11 +97,13 @@ import net.neoforged.neoforge.event.village.WandererTradesEvent;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 
 import static com.kelco.kamenridercraft.KamenRiderCraftCore.MOD_ID;
+import static com.kelco.kamenridercraft.attachments.AttachmentTypes.TOJIMA_TRAINING;
 import static com.kelco.kamenridercraft.attachments.AttachmentTypes.USED_ABILITY;
+import static com.kelco.kamenridercraft.effects.EffectCore.*;
+import static com.kelco.kamenridercraft.world.attribute.KRCAttributes.*;
 
 
 public class ModCommonEvents {
@@ -108,18 +115,19 @@ public class ModCommonEvents {
         public void onPlayerDisconnect(PlayerEvent.PlayerLoggedOutEvent event) {
             if (event.getEntity() instanceof ServerPlayer player) {
                 player.serverLevel().getAllEntities().forEach(entity -> {
-                    if (entity instanceof BaseSummonEntity summon) summon.despawn();
+                    if (entity instanceof BaseSummonEntity summon) {
+                        summon.despawn();
+                    }
                 });
             }
         }
 
         @SubscribeEvent
         public void DropsEvent(BlockDropsEvent event) {
-
             if (event.getState().is(BlockTags.create(ResourceLocation.withDefaultNamespace("logs")))) {
                 if (event.getBreaker() instanceof Player player) {
-                    if (player.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() & Objects.requireNonNull(player.getAttribute(Attributes.TOJIMA)).getValue() < 100)
-                        Objects.requireNonNull(player.getAttribute(Attributes.TOJIMA)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attributes.TOJIMA)).getValue() + 1);
+                    if (player.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && player.getData(TOJIMA_TRAINING) < 100)
+                        player.setData(TOJIMA_TRAINING, player.getData(TOJIMA_TRAINING) + 1);
                 }
             }
 
@@ -137,119 +145,121 @@ public class ModCommonEvents {
 
         @SubscribeEvent
         public void onPlayerTick(PlayerTickEvent.Post event) {
-            if (!event.getEntity().level().isClientSide()) {
-                if (event.getEntity().getAttribute(Attributes.TOJIMA).getValue() > 99 & event.getEntity().getItemBySlot(EquipmentSlot.HEAD).getItem() == ExtraRiderItems.ICHIGO_MASK.asItem())
-                    event.getEntity().addEffect(new MobEffectInstance(EffectCore.KNOCKBACK_BOOST, 30, 3, false, false));
+            Player player = event.getEntity();
+            Level level = player.level();
 
-                ResourceKey<Level> MOON = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse("kamenridercraft:moon"));
+            if (!level.isClientSide()) {
                 ResourceKey<Level> DREAM = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse("kamenridercraft:dream"));
 
-                if (event.getEntity().level().dimension() == MOON && event.getEntity().level().getGameRules().getBoolean(ModGameRules.RULE_MOON_GRAVITY)) {
-                    event.getEntity().addEffect(new MobEffectInstance(EffectCore.LOW_GRAVITY, 30, 7, false, false));
-                } else if (event.getEntity().level().dimension() == DREAM & event.getEntity().position().y < -2) {
-                    if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-                        DimensionUtil.returnToSpawn(event.getEntity().getServer().overworld(), serverPlayer);
-                    }
-                }
-                if (event.getEntity().level().dimension() != DREAM) {
-                    event.getEntity().removeEffect(EffectCore.DREAMING);
-                }else{
-                       if (event.getEntity() instanceof ServerPlayer serverPlayer) {
-                           StructureManager structureManager = ((ServerLevel) event.getEntity().level()).structureManager();
-                           TagKey<Structure> nightmareKey = TagKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(MOD_ID, "nightmare"));
-                           StructureStart nightmareLocation = structureManager.getStructureWithPieceAt(event.getEntity().blockPosition(), nightmareKey);
-
-                           if (!nightmareLocation.isValid() && !serverPlayer.isSpectator()) {
-                               DimensionUtil.returnToSpawn(event.getEntity().getServer().overworld(), serverPlayer);
-                               if (!serverPlayer.isCreative()) {
-                                   serverPlayer.addEffect(new MobEffectInstance(EffectCore.INSOMNIA, 1200, 0, false, true));
-                               }
-                           }
-                    }
-                }
+                StructureManager structureManager = ((ServerLevel) level).structureManager();
+                TagKey<Structure> nightmareKey = TagKey.create(Registries.STRUCTURE, ResourceLocation.fromNamespaceAndPath(MOD_ID, "nightmare"));
 
                 LocalDate localdate = LocalDate.now();
                 int day = localdate.getDayOfMonth();
+
+                if (player.getData(TOJIMA_TRAINING) > 99
+                        & player.getItemBySlot(EquipmentSlot.HEAD).getItem() == ExtraRiderItems.ICHIGO_MASK.asItem()) {
+                    player.addEffect(new MobEffectInstance(EffectCore.KNOCKBACK_BOOST, 20, 3, false, false));
+                }
+
+                if (level.dimension() == DREAM) {
+                    if (player instanceof ServerPlayer serverPlayer) {
+                        if (player.position().y < -2) {
+                            DimensionUtil.returnToSpawn(player.getServer().overworld(), serverPlayer);
+                            return;
+                        }
+                        StructureStart nightmareLocation = structureManager.getStructureWithPieceAt(player.blockPosition(), nightmareKey);
+                        if (!nightmareLocation.isValid() && !serverPlayer.isSpectator()) {
+                            DimensionUtil.returnToSpawn(player.getServer().overworld(), serverPlayer);
+                            if (!serverPlayer.isCreative()) {
+                                serverPlayer.addEffect(new MobEffectInstance(INSOMNIA, 1200, 0, false, true));
+                            }
+                        }
+                    }
+                }
+                if (level.dimension() != DREAM) {
+                    player.removeEffect(DREAMING);
+                }
+
                 if (localdate.getMonthValue() == 12 && day >= 22 && day <= 28) {
-                    event.getEntity().addEffect(new MobEffectInstance(EffectCore.CHRISTMAS, 30, 0, false, false));
+                    player.addEffect(new MobEffectInstance(EffectCore.CHRISTMAS, 30, 0, false, false));
                 }
 
-                if (event.getEntity().level().getGameRules().getBoolean(ModGameRules.RULE_HAPPY_MODE)) {
-                    event.getEntity().addEffect(new MobEffectInstance(EffectCore.HAPPY_MODE, 30, 0, false, false));
+                if (level.getGameRules().getBoolean(ModGameRules.RULE_HAPPY_MODE)) {
+                    player.addEffect(new MobEffectInstance(EffectCore.HAPPY_MODE, 30, 0, false, false));
                 }
             }
         }
-
-        @SubscribeEvent
-        public void addLivingDamageEvent(LivingEvent.LivingVisibilityEvent event) {
-
-            if (event.getLookingEntity() instanceof LivingEntity entity) {
-                //if (entity.getAttribute(AttributeRegistry.IS_TRANSFORMING).getBaseValue()!=0)entity.getAttribute(AttributeRegistry.IS_TRANSFORMING).setBaseValue(entity.getAttribute(AttributeRegistry.IS_TRANSFORMING).getBaseValue()-0.2);
-            }
-        }
-
 
         @SubscribeEvent
         public void onEntityTick(EntityTickEvent.Post event) {
+            ResourceKey<Level> MOON = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse("kamenridercraft:moon"));
+            if (event.getEntity() instanceof LivingEntity livingEntity) {
+                if (!event.getEntity().level().isClientSide()) {
+                    if (livingEntity.level().dimension() == MOON
+                            && event.getEntity().level().getGameRules().getBoolean(ModGameRules.RULE_MOON_GRAVITY)) {
+                        livingEntity.addEffect(new MobEffectInstance(LOW_GRAVITY, 20, 7, false, false));
+                    }
+                }
 
-            if (event.getEntity() instanceof LivingEntity player) {
+                if (livingEntity.getAttribute(WIND).getBaseValue() > 0) {
+                    livingEntity.getAttribute(WIND).setBaseValue(livingEntity.getAttribute(WIND).getValue() - 1);
+                } else if (livingEntity.getAttribute(WIND).getValue() < 0) {
+                    livingEntity.getAttribute(WIND).setBaseValue(0);
+                }
 
-                if (player.getAttribute(Attributes.WIND).getBaseValue() > 0)
-                    player.getAttribute(Attributes.WIND).setBaseValue(player.getAttribute(Attributes.WIND).getBaseValue() - 1);
-                if (player.getAttribute(Attributes.WIND).getBaseValue() < 0)
-                    player.getAttribute(Attributes.WIND).setBaseValue(0);
-                if (player.level().isClientSide()) {
+                if (livingEntity.level().isClientSide()) {
                     float X = 0;
-                    float Y = 0;
                     float Z = 0;
-                    boolean isPlayer = false;
-                    if (player instanceof Mob mob) {
-                        if (player.getDeltaMovement().x != 0 || player.getDeltaMovement().z != 0) {
+
+                    if (livingEntity instanceof Mob mob) {
+                        if (livingEntity.getDeltaMovement().x != 0 || livingEntity.getDeltaMovement().z != 0) {
                             X = mob.getViewXRot(1);
-                            Vec3 look = player.getLookAngle();
-                            if (look.x > 0 & player.getDeltaMovement().x > 0) Z = 1;
-                            else if (look.z > 0 & player.getDeltaMovement().z > 0) Z = 1;
-                            else if (look.x < 0 & player.getDeltaMovement().x < 0) Z = 1;
-                            else if (look.z < 0 & player.getDeltaMovement().z < 0) Z = 1;
+                            Vec3 look = livingEntity.getLookAngle();
+                            if (look.x > 0 & livingEntity.getDeltaMovement().x > 0) Z = 1;
+                            else if (look.z > 0 & livingEntity.getDeltaMovement().z > 0) Z = 1;
+                            else if (look.x < 0 & livingEntity.getDeltaMovement().x < 0) Z = 1;
+                            else if (look.z < 0 & livingEntity.getDeltaMovement().z < 0) Z = 1;
                             else Z = -1;
                         }
-                        player.getAttribute(Attributes.BALL_ROT_OLD).setBaseValue(player.getAttribute(Attributes.BALL_ROT).getBaseValue());
-                        player.getAttribute(Attributes.WHEEL_ROT_OLD).setBaseValue(player.getAttribute(Attributes.WHEEL_ROT).getBaseValue());
-                        player.getAttribute(Attributes.CAPE_ROT_OLD).setBaseValue(player.getAttribute(Attributes.CAPE_ROT).getBaseValue());
+                        livingEntity.getAttribute(BALL_ROT_OLD).setBaseValue(livingEntity.getAttribute(BALL_ROT).getBaseValue());
+                        livingEntity.getAttribute(WHEEL_ROT_OLD).setBaseValue(livingEntity.getAttribute(WHEEL_ROT).getBaseValue());
+                        livingEntity.getAttribute(CAPE_ROT_OLD).setBaseValue(livingEntity.getAttribute(CAPE_ROT).getBaseValue());
 
-                        if (player.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof RiderDriverItem belt) {
-
-                            if (belt.hasCape(player.getItemBySlot(EquipmentSlot.FEET))) {
-
-                                float cape = (float) player.getAttribute(Attributes.CAPE_ROT).getBaseValue();
+                        if (livingEntity.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof RiderDriverItem belt) {
+                            if (belt.hasCape(livingEntity.getItemBySlot(EquipmentSlot.FEET))) {
+                                float cape = (float) livingEntity.getAttribute(CAPE_ROT).getBaseValue();
                                 float ball = 0;
-                                if (Z > 0 & cape > -0.7 & !player.isSwimming())
-                                    cape = cape - 0.01f - (player.getSpeed() / 10);
-                                else if (Z > 0 & cape > -0.7 & !player.isSwimming())
+
+                                if (Z > 0 & cape > -0.7 & !livingEntity.isSwimming())
+                                    cape = cape - 0.01f - (livingEntity.getSpeed() / 10);
+                                else if (Z > 0 & cape > -0.7 & !livingEntity.isSwimming()) {
                                     cape = 0;
-                                else if (X == 0 & Z < 0 & cape < 0) cape = cape + 0.2f;
-                                else if (X == 0 & Z == 0 & cape < 0 & X == 0 || X == 0 & Z == 0 & cape < -0.7 || X == 0 & cape < 0 & player.isSwimming())
+                                } else if (X == 0 & Z < 0 & cape < 0) {
+                                    cape = cape + 0.2f;
+                                } else if (X == 0 & Z == 0 & cape < 0 & X == 0 || X == 0 & Z == 0 & cape < -0.7
+                                        || X == 0 & cape < 0 & livingEntity.isSwimming()) {
                                     cape = cape + 0.02f;
+                                }
                                 if (X > 0) {
                                     ball = 0.2f;
-                                    if (isPlayer & Z == 0 & cape > -0.7)
-                                        cape = cape - 0.02f - (player.getSpeed() / 10);
+                                    if (Z == 0 & cape > -0.7)
+                                        cape = cape - 0.02f - (livingEntity.getSpeed() / 10);
                                 }
                                 if (X < 0) {
                                     ball = -0.2f;
-                                    if (isPlayer & Z == 0 & cape > -0.7)
-                                        cape = cape - 0.02f - (player.getSpeed() / 10);
+                                    if (Z == 0 & cape > -0.7)
+                                        cape = cape - 0.02f - (livingEntity.getSpeed() / 10);
                                 }
-                                //if (player.fallDistance > 0 & !player.isSwimming() & cape > -2) cape = cape - 0.05f;
 
-                                player.getAttribute(Attributes.BALL_ROT).setBaseValue(ball);
-                                player.getAttribute(Attributes.CAPE_ROT).setBaseValue(cape);
+                                livingEntity.getAttribute(KRCAttributes.BALL_ROT).setBaseValue(ball);
+                                livingEntity.getAttribute(KRCAttributes.CAPE_ROT).setBaseValue(cape);
                             }
-                            if (RiderDriverItem.getFormItem(player.getItemBySlot(EquipmentSlot.FEET), 1).getIsBike()) {
+                            if (RiderDriverItem.getFormItem(livingEntity.getItemBySlot(EquipmentSlot.FEET), 1).getIsBike()) {
                                 float wheel = 0;
                                 if (Z > 0) wheel = -0.1f;
                                 if (Z < 0) wheel = 0.1f;
-                                Objects.requireNonNull(player.getAttribute(Attributes.WHEEL_ROT)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attributes.WHEEL_ROT)).getBaseValue() + wheel);
+                                livingEntity.getAttribute(WHEEL_ROT).setBaseValue(livingEntity.getAttribute(WHEEL_ROT).getBaseValue() + wheel);
                                 float ball = 0;
                                 if (X > 0) {
                                     ball = 0.5f;
@@ -257,23 +267,24 @@ public class ModCommonEvents {
                                 if (X < 0) {
                                     ball = -0.5f;
                                 }
-                                Objects.requireNonNull(player.getAttribute(Attributes.BALL_ROT)).setBaseValue(ball);
-                                Objects.requireNonNull(player.getAttribute(Attributes.WHEEL_ROT)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attributes.WHEEL_ROT)).getBaseValue() + wheel);
+                                livingEntity.getAttribute(BALL_ROT).setBaseValue(ball);
+                                livingEntity.getAttribute(WHEEL_ROT).setBaseValue(livingEntity.getAttribute(WHEEL_ROT).getBaseValue() + wheel);
                             }
                         }
                     }
                 }
-                if (Objects.requireNonNull(player.getAttribute(Attributes.IS_TRANSFORMING)).getBaseValue() != 0)
-                    Objects.requireNonNull(player.getAttribute(Attributes.IS_TRANSFORMING)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attributes.IS_TRANSFORMING)).getBaseValue() - 1);
-                if (Objects.requireNonNull(player.getAttribute(Attributes.IS_TRANSFORMING)).getBaseValue() <= 0)
-                    Objects.requireNonNull(player.getAttribute(Attributes.IS_TRANSFORMING)).setBaseValue(0);
-            }
+                if (livingEntity.getAttribute(IS_TRANSFORMING).getBaseValue() != 0)
+                    livingEntity.getAttribute(IS_TRANSFORMING).setBaseValue(livingEntity.getAttribute(IS_TRANSFORMING).getBaseValue() - 1);
+                if (livingEntity.getAttribute(IS_TRANSFORMING).getBaseValue() <= 0)
+                    livingEntity.getAttribute(IS_TRANSFORMING).setBaseValue(0);
 
-            if (!(event.getEntity() instanceof Player) && event.getEntity() instanceof LivingEntity entity && !entity.level().isClientSide && entity.getAttribute(Attributes.CLIMBING).getValue() != 0) {
-                if (entity.horizontalCollision) {
-                    Vec3 initialVec = entity.getDeltaMovement();
-                    Vec3 climbVec = new Vec3(initialVec.x, 0.1D * (Objects.requireNonNull(entity.getAttribute(Attributes.CLIMBING)).getValue()), initialVec.z);
-                    entity.setDeltaMovement(climbVec.scale(0.97D));
+                if (!(event.getEntity() instanceof Player) && !livingEntity.level().isClientSide()
+                        && livingEntity.getAttribute(KRCAttributes.CLIMBING).getValue() != 0) {
+                    if (livingEntity.horizontalCollision) {
+                        Vec3 initialVec = livingEntity.getDeltaMovement();
+                        Vec3 climbVec = new Vec3(initialVec.x, 0.1D * (livingEntity.getAttribute(KRCAttributes.CLIMBING).getValue()), initialVec.z);
+                        livingEntity.setDeltaMovement(climbVec.scale(0.97D));
+                    }
                 }
             }
         }
@@ -336,7 +347,8 @@ public class ModCommonEvents {
             return Items.APPLE;
         }
 
-        public ResourceLocation dropItem(ServerLevel world, Player player, Player playerIn, InteractionHand p_41434_) {
+        public ResourceLocation dropItem(ServerLevel world, Player player, Player playerIn, InteractionHand
+                p_41434_) {
             ResourceKey<LootTable> loot = ResourceKey.create(Registries.LOOT_TABLE, LOOT_TABLE_PATH);
             LootTable loottable = world.getServer().reloadableRegistries().getLootTable(loot);
             LootParams.Builder lootparams$builder = new LootParams.Builder(world)
@@ -472,8 +484,8 @@ public class ModCommonEvents {
         public void addLivingDamageEvent(LivingDamageEvent.Post event) {
             Entity sourceEntity = event.getSource().getEntity();
             if (sourceEntity instanceof LivingEntity livingEntity) {
-                AttributeInstance abilityMeter = livingEntity.getAttribute(Attributes.ABILITY_METER);
-                AttributeInstance maxAbilityMeter = livingEntity.getAttribute(Attributes.MAX_ABILITY_METER);
+                AttributeInstance abilityMeter = livingEntity.getAttribute(KRCAttributes.ABILITY_METER);
+                AttributeInstance maxAbilityMeter = livingEntity.getAttribute(KRCAttributes.MAX_ABILITY_METER);
                 if (livingEntity.getData(USED_ABILITY).isEmpty() && !(event.getSource().is(DamageTypes.ARROW) || event.getSource().is(DamageTypes.MOB_PROJECTILE) || event.getSource().is(DamageTypes.FIREBALL)) && abilityMeter.getValue() < maxAbilityMeter.getValue()) {
                     if (livingEntity.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof RiderDriverItem driverItem && driverItem.isTransformed(livingEntity)) {
                         abilityMeter.setBaseValue(abilityMeter.getValue() + 1 * driverItem.abilityMultiplier);
@@ -576,7 +588,7 @@ public class ModCommonEvents {
 
                     if (_livEnt.hasEffect(EffectCore.WITHER_SLASH)) {
                         if (_livEnt.getMainHandItem().getItem() instanceof SwordItem || _livEnt.getMainHandItem().getItem() instanceof BaseBlasterItem) {
-                        event.getEntity().addEffect(new MobEffectInstance(MobEffects.WITHER, 500, _livEnt.getEffect(EffectCore.WITHER_SLASH).getAmplifier(), false, true));
+                            event.getEntity().addEffect(new MobEffectInstance(MobEffects.WITHER, 500, _livEnt.getEffect(EffectCore.WITHER_SLASH).getAmplifier(), false, true));
                         }
                     }
 
@@ -637,7 +649,8 @@ public class ModCommonEvents {
                     }
 
                     if (_livEnt.hasEffect(EffectCore.FIRE_SHOT)) {
-                        event.getEntity().setRemainingFireTicks(25 * (Objects.requireNonNull(_livEnt.getEffect(EffectCore.FIRE_SHOT)).getAmplifier() + 1));
+                        event.getEntity().setRemainingFireTicks(25 * (_livEnt.getEffect(EffectCore.FIRE_SHOT)).getAmplifier() + 1)
+                        ;
                     }
 
                     if (_livEnt.hasEffect(EffectCore.EXPLOSION_SHOT)) {
@@ -665,6 +678,22 @@ public class ModCommonEvents {
                     && belt.isTransformed(event.getEntity()) && event.getEntity().hasEffect(MobEffects.INVISIBILITY)) {
                 event.modifyVisibility(event.getVisibilityModifier() * 0.1);
             }
+        }
+
+        @SubscribeEvent
+        public void onBrewingRecipeRegister(RegisterBrewingRecipesEvent event) {
+            PotionBrewing.Builder builder = event.getBuilder();
+
+            builder.addMix(Potions.AWKWARD, AgitoRiderItems.GILLS.asItem(), AGITO_FACTOR_POTION);
+            builder.addMix(Potions.AWKWARD, ExAidRiderItems.BUGSTER_VIRUS_DNA.asItem(), BUGSTER_POTION);
+            builder.addMix(Potions.AWKWARD, ExAidRiderItems.SAVE_ENERGY_ITEM.asItem(), MUTEKI_POTION);
+            builder.addMix(Potions.AWKWARD, BuildRiderItems.NEBULA_GAS_SAMPLE.asItem(), HAZARD_LEVEL_POTION);
+            builder.addMix(Potions.AWKWARD, OOORiderItems.CELL_MEDAL.asItem(), GREEED_POTION);
+            builder.addMix(Potions.AWKWARD, GhostRiderItems.ORE_GHOST_EYECON.asItem(), GHOST_POTION);
+            builder.addMix(Potions.AWKWARD, ModdedItemCore.COFFEE.asItem(), INSOMNIA_POTION);
+            builder.addMix(Potions.AWKWARD, MusicDiscItems.MASKED_RIDER_MUSIC_DISC.asItem(), NOTE_POTION);
+            builder.addMix(Potions.AWKWARD, RiderBlocks.LOVEKOV_PLUSH.asItem(), HAPPY_MODE_POTION);
+            builder.addMix(Potions.AWKWARD, ModdedItemCore.PUDDING.asItem(), SD_POTION);
         }
 
         @SubscribeEvent
@@ -882,7 +911,6 @@ public class ModCommonEvents {
             }
         }
     }
-
 
     @SubscribeEvent
     public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {

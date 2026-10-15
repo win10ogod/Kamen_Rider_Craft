@@ -1,7 +1,7 @@
 package com.kelco.kamenridercraft.item.base_items;
 
 
-import com.kelco.kamenridercraft.client.renderer.RiderArmorRenderer;
+import com.kelco.kamenridercraft.client.renderer.armor.RiderArmorRenderer;
 import com.kelco.kamenridercraft.data.ModItemModelProvider;
 import com.kelco.kamenridercraft.effects.EffectCore;
 import com.kelco.kamenridercraft.item.ModdedItemCore;
@@ -71,7 +71,7 @@ public class RiderArmorItem extends ArmorItem  implements GeoItem {
 
 
     public RiderArmorItem addToList(List<Item> TabList, int num) {
-        for (int i = 0; i < num; i++) {
+        for (int i = 0; i < num; ++i) {
             TabList.add(this);
         }
         return this;
@@ -109,7 +109,7 @@ public class RiderArmorItem extends ArmorItem  implements GeoItem {
     }
 
 
-    public RiderArmorItem has_basic_model() {
+    public RiderArmorItem useBasicModel() {
         ModItemModelProvider.BASIC_ITEM_MODEL2.add(this);
         return this;
     }

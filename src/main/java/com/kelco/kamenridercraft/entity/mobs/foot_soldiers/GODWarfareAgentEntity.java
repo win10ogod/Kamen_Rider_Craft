@@ -2,7 +2,7 @@ package com.kelco.kamenridercraft.entity.mobs.foot_soldiers;
 
 import com.kelco.kamenridercraft.entity.mobs.MobsCore;
 import com.kelco.kamenridercraft.level.ModGameRules;
-import com.kelco.kamenridercraft.world.attribute.Attributes;
+import com.kelco.kamenridercraft.world.attribute.KRCAttributes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
@@ -17,7 +17,7 @@ public class GODWarfareAgentEntity extends BaseHenchmenEntity {
     public GODWarfareAgentEntity(EntityType<? extends BaseHenchmenEntity> type, Level level) {
         super(type, level);
         NAME = "god_warfare_agents";
-        getAttribute(Attributes.REINFORCEMENT_CHANCE).setBaseValue(12D);
+        getAttribute(KRCAttributes.REINFORCEMENT_CHANCE).setBaseValue(12D);
     }
 
     public void remove(RemovalReason reason) {
@@ -26,7 +26,7 @@ public class GODWarfareAgentEntity extends BaseHenchmenEntity {
             int gamerule = this.level().getGameRules().getInt(ModGameRules.RULE_BOSS_SPAWN_PERCENTAGE);
 
             if (chance * 100.0 <= gamerule && (this.lastHurtByPlayer != null && canSpawnBoss(this.lastHurtByPlayer) || !(this.getLastAttacker() instanceof Player) && chance * 200.0 <= gamerule)) {
-                BaseHenchmenEntity boss = MobsCore.APOLLOGIST.get().create(this.level());
+                BaseHenchmenEntity boss = MobsCore.APOLLOGEIST.get().create(this.level());
                 if (boss != null) {
                     boss.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F);
                     this.level().addFreshEntity(boss);

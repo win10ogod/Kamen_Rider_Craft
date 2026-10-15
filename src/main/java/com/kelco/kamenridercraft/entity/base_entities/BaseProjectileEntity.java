@@ -2,6 +2,7 @@ package com.kelco.kamenridercraft.entity.base_entities;
 
 import com.kelco.kamenridercraft.effects.EffectCore;
 import com.kelco.kamenridercraft.entity.mobs.MobsCore;
+import com.kelco.kamenridercraft.entity.mobs.foot_soldiers.UndeadEntity;
 import com.kelco.kamenridercraft.particle.ModParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -10,6 +11,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -17,10 +19,12 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileDeflection;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
@@ -40,13 +44,16 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
 
+import static com.kelco.kamenridercraft.attachments.AttachmentTypes.MOB_STATE;
+import static com.kelco.kamenridercraft.item.heisei_phase_1.BladeRiderItems.BLANK_ROUZECARD;
+
 public class BaseProjectileEntity extends Projectile implements GeoEntity, TraceableEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private String projectile = "laser";
+    public String projectile = "laser";
     private String model = "laser";
     private String texture = "yellow_laser";
     private boolean glowing = false;
-    private int ttl = 400;
+    public int ttl = 400;
 
     private float damage;
     private int explosionPower;
@@ -59,7 +66,9 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
     private static final RawAnimation SPIN_ANIM = RawAnimation.begin().thenPlay("projectile.spinning");
     private static final RawAnimation EFFECT_BALL_ANIM = RawAnimation.begin().thenPlay("projectile.effect_ball");
     private static final RawAnimation MEDAL_ANIM = RawAnimation.begin().thenPlay("projectile.medal");
+    private static final RawAnimation CARD_ANIM = RawAnimation.begin().thenPlay("projectile.card");
 
+    private static final EntityDataAccessor<String> PROJECTILE = SynchedEntityData.defineId(BaseProjectileEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(BaseProjectileEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> MODEL = SynchedEntityData.defineId(BaseProjectileEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> GLOWING = SynchedEntityData.defineId(BaseProjectileEntity.class, EntityDataSerializers.BOOLEAN);
@@ -72,13 +81,14 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
         super(MobsCore.BASE_PROJECTILE.get(), level);
         setOwner(shooter);
         projectile = projectileName.toLowerCase();
+        entityData.set(PROJECTILE, projectileName.toLowerCase());
         damage = projDamage;
         explosionPower = explosionStrength;
         effects = projectileEffects;
         Vec3 vec3 = getDeltaMovement();
         double d0 = vec3.horizontalDistance();
         setPos(shooter.getX(), shooter.getEyeY() - (double) 0.1F, shooter.getZ());
-        setYRot((float) (Mth.atan2(vec3.x, vec3.z) * (double) 180.0F / (double) (float) Math.PI));
+        setYRot((float) (Mth.atan2(vec3.y, vec3.z) * (double) 180.0F / (double) (float) Math.PI));
         setXRot((float) (Mth.atan2(vec3.y, d0) * (double) 180.0F / (double) (float) Math.PI));
     }
 
@@ -88,10 +98,16 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
         if (ttl > 0) {
             ++ttl;
         } else {
+            if (getProjectile().equals("blank_rouze")) {
+                ItemEntity card = new ItemEntity(level(), getX(), getY(), getZ(),
+                        new ItemStack(BLANK_ROUZECARD.get(), 1), 0, 0, 0);
+                card.setPickUpDelay(0);
+                level().addFreshEntity(card);
+            }
             discard();
         }
-        if (!animStarted) {
-            switch (projectile.toLowerCase()) {
+        if (!animStarted && !level().isClientSide()) {
+            switch (getProjectile()) {
                 case "short_laser", "laser", "long_laser", "rocket":
                     triggerAnim("projectile", "spin");
                     break;
@@ -104,8 +120,12 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
                 case "effect_ball":
                     triggerAnim("projectile", "effect_ball");
                     break;
+                case "blank_rouze":
+                    triggerAnim("projectile", "card");
+                    break;
             }
         }
+        animStarted = true;
         if (level() instanceof ServerLevel serverLevel) {
             switch (projectile.toLowerCase()) {
                 case "rocket":
@@ -135,6 +155,21 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
             if (projectile.equalsIgnoreCase("rocket")) {
                 boolean flag = level().getLevelData().getGameRules().getRule(GameRules.RULE_MOBGRIEFING).get();
                 this.level().explode(null, this.getX(), this.getY(), this.getZ(), explosionPower, flag, Level.ExplosionInteraction.MOB);
+            }
+            if (projectile.equals("blank_rouze")) {
+                ItemEntity card = new ItemEntity(level(), getX(), getY(), getZ(),
+                        new ItemStack(BLANK_ROUZECARD.get(), 1), 0, 0, 0);
+                card.setPickUpDelay(0);
+                level().addFreshEntity(card);
+
+                if (getOwner() instanceof LivingEntity livingEntity) {
+                    BaseEffectEntity magicCircle = new BaseEffectEntity(level(), 600, livingEntity);
+                    magicCircle.setGlowing(true);
+                    magicCircle.setTexture("undead_sealing");
+                    magicCircle.setModel("empty.geo.json");
+                    magicCircle.moveTo(getX(), getY() + 1, getZ(), 0, 0.0F);
+                    level().addFreshEntity(magicCircle);
+                }
             }
             discard();
 //            VoxelShape voxelshape = blockstate.getCollisionShape(level(), blockpos);
@@ -227,7 +262,6 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
             float f = 0.99F;
             if (isInWater()) {
                 for (int j = 0; j < 4; ++j) {
-                    float f1 = 0.25F;
                     level().addParticle(ParticleTypes.BUBBLE, d7 - d5 * (double) 0.25F, d2 - d6 * (double) 0.25F, d3 - d1 * (double) 0.25F, d5, d6, d1);
                 }
 
@@ -246,7 +280,15 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
 
     protected void onHitEntity(EntityHitResult result) {
         Entity hitEntity = result.getEntity();
-        if (!level().isClientSide() && hitEntity instanceof LivingEntity livingEntity && hitEntity != getOwner() && !(hitEntity instanceof ArmorStand)) {
+        if (!level().isClientSide() && hitEntity instanceof LivingEntity livingEntity
+                && hitEntity != getOwner() && !(hitEntity instanceof ArmorStand)) {
+            if (projectile.equals("blank_rouze") && getOwner() instanceof ServerPlayer sealer && hitEntity instanceof UndeadEntity undeadEntity
+                    && undeadEntity.getData(MOB_STATE).contains("sealable")) {
+                undeadEntity.sealUndead(sealer);
+                undeadEntity.discard();
+                discard();
+                return;
+            }
             if (getOwner() instanceof LivingEntity owner) {
                 livingEntity.hurt(livingEntity.damageSources().mobProjectile(this, owner), damage);
             } else {
@@ -285,6 +327,16 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
         return entityData.get(MODEL);
     }
 
+    public BaseProjectileEntity setProjectile(String projectile) {
+        this.projectile = projectile;
+        entityData.set(PROJECTILE, projectile);
+        return this;
+    }
+
+    public String getProjectile() {
+        return entityData.get(PROJECTILE);
+    }
+
     public BaseProjectileEntity setGlowing(boolean isGlowing) {
         this.glowing = isGlowing;
         entityData.set(GLOWING, isGlowing);
@@ -309,13 +361,16 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(MODEL, "laser");
         builder.define(TEXTURE, "yellow_laser");
+        builder.define(PROJECTILE, "laser");
         builder.define(GLOWING, true);
     }
 
     public void addAdditionalSaveData(CompoundTag compound) {
         compound.putString("model", model);
         compound.putString("texture", texture);
+        compound.putString("projectile", projectile);
         compound.putBoolean("glowing", glowing);
+
     }
 
     public void readAdditionalSaveData(CompoundTag compound) {
@@ -328,7 +383,10 @@ public class BaseProjectileEntity extends Projectile implements GeoEntity, Trace
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "projectile", 0, state -> PlayState.STOP).triggerableAnim("spin", SPIN_ANIM).triggerableAnim("medal", MEDAL_ANIM).triggerableAnim("effect_ball", EFFECT_BALL_ANIM).triggerableAnim("skull_jostle", SKULL_ANIM));
+        controllers.add(new AnimationController<>(this, "projectile", 0,
+                state -> PlayState.STOP).triggerableAnim("spin", SPIN_ANIM)
+                .triggerableAnim("medal", MEDAL_ANIM).triggerableAnim("effect_ball", EFFECT_BALL_ANIM)
+                .triggerableAnim("skull_jostle", SKULL_ANIM).triggerableAnim("card", CARD_ANIM));
     }
 
     @Override
